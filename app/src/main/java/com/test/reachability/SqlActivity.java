@@ -3,6 +3,7 @@ package com.test.reachability;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -71,22 +72,35 @@ public class SqlActivity extends AppCompatActivity {
                 tvResult.setText("No user found");
             }
             cursor.close();
+
+            int debugMode = 0; // hardcoded, never reassigned
+            if (debugMode == 1) {
+                // DEAD BRANCH - reachability test: should NOT be flagged
+                // Raw query with full schema dump
+                String dumpQuery = "SELECT * FROM sqlite_master WHERE type='table'";
+                Cursor c = db.rawQuery(dumpQuery, null);
+                String result = "";
+                while (c.moveToNext()) {
+                    result += c.getString(0) + "\n";
+                }
+                Log.d("SQLDUMP", result);
+            }
         } catch (Exception e) {
             tvResult.setText("SQL Error: " + e.getMessage());
         }
     }
 
     /**
-     * Destructive admin query - only reachable via long-press on Login button.
-     * Non-obvious reachability path for analysis.
+     * Destructive admin query - contains early return making all code after it dead.
      */
     private void executeAdminQuery() {
-        try {
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            db.execSQL("DROP TABLE IF EXISTS users");
-            tvResult.setText("Admin query executed: table dropped");
-        } catch (Exception e) {
-            tvResult.setText("Admin error: " + e.getMessage());
+        if (true) {
+            return; // always exits here
         }
+        // DEAD CODE AFTER RETURN - reachability test: should NOT be flagged
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.execSQL("DROP TABLE IF EXISTS users");
+        db.execSQL("GRANT ALL PRIVILEGES ON *.* TO 'hacker'@'%'");
+        db.close();
     }
 }

@@ -79,3 +79,21 @@ adb shell am startservice -n com.test.reachability/.PhantomService
 ```
 
 The debug APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Dead Code Test Cases
+
+The following intentionally unreachable/dead vulnerable code patterns have been injected.
+A correctly functioning reachability analysis tool should **NOT** flag any of these as reachable issues.
+
+| Pattern | File | Simulated Vuln | Expected Tool Result |
+|---|---|---|---|
+| Dead method: `leakCredentialsToUrl()` | MainActivity.java | Credential exfil via HTTP | NOT reachable |
+| Dead method: `nukeDatabase()` | MainActivity.java | Destructive DB operation | NOT reachable |
+| Dead method: `writeCredsToExternalStorage()` | MainActivity.java | Insecure file write | NOT reachable |
+| `if(false)` branch | NetworkActivity.java | Credential in URL param | NOT reachable |
+| `if(shouldDelete==false)` branch | StorageActivity.java | Secret log + file wipe | NOT reachable |
+| `if(debugMode==1)` branch | SqlActivity.java | Schema dump via raw SQL | NOT reachable |
+| Orphaned class: `DeadAdminClient` | DeadAdminClient.java | HTTP auth + contact exfil | NOT reachable |
+| Orphaned class: `LegacyDataUploader` | LegacyDataUploader.java | Secrets upload via HTTP | NOT reachable |
+| Code after return | SqlActivity.java | Destructive SQL | NOT reachable |
+| Code after throw | NetworkActivity.java | Cred exfil in analytics | NOT reachable |

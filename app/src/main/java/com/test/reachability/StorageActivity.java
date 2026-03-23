@@ -1,6 +1,5 @@
 package com.test.reachability;
 
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
@@ -67,6 +66,7 @@ public class StorageActivity extends AppCompatActivity {
         }
 
         logSensitiveData();
+        conditionallyDeleteSecrets();
     }
 
     private void readSecret() {
@@ -84,5 +84,20 @@ public class StorageActivity extends AppCompatActivity {
 
     private void logSensitiveData() {
         Log.d("SECRETS", "Stored token: " + SECRET);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void conditionallyDeleteSecrets() {
+        boolean shouldDelete = false; // never changes
+        if (shouldDelete) {
+            // DEAD BRANCH - reachability test: should NOT be flagged
+            File f = new File(Environment.getExternalStorageDirectory(),
+                              "secrets.txt");
+            f.delete();
+            SharedPreferences prefs = getSharedPreferences("app_prefs", 0);
+            prefs.edit().clear().apply();
+            Log.d("SECRETS", "All secrets wiped: " +
+                  "super_secret_token_9982xABC");
+        }
     }
 }
