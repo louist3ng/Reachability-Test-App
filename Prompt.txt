@@ -1,0 +1,122 @@
+Create a simple Android application called "ReachabilityTestApp" designed as a
+intentionally vulnerable target app for reachability analysis testing
+(network reachability, code/call graph reachability, and Android component
+reachability). This is for authorized security research and testing purposes only.
+
+## Project Setup
+- Language: Java (not Kotlin) for broader static analysis tool compatibility
+- Min SDK: 21, Target SDK: 33
+- Single module app, no unnecessary dependencies
+- Package name: com.test.reachability
+
+## App Structure
+Create a simple multi-screen app with a MainActivity that has buttons navigating
+to each demo screen. Include the following:
+
+---
+
+### 1. MainActivity.java
+- Simple launcher with 4 buttons: "Network Demo", "Storage Demo",
+  "Component Demo", "SQL Demo"
+- Hardcode an API key constant at the top of the file:
+    private static final String API_KEY = "sk-prod-ABC123hardcodedSecret999";
+- Hardcode a secondary credential:
+    private static final String DB_PASSWORD = "admin1234!";
+- These should be referenced in at least one method so they appear in the call graph
+
+---
+
+### 2. NetworkActivity.java
+- Two buttons: "Fetch HTTP" and "Fetch HTTPS (no pinning)"
+- HTTP button: Make a plain HTTP request to http://example.com using
+  HttpURLConnection on a background thread. Show response code in a TextView.
+- HTTPS button: Make an HTTPS request using a custom TrustManager that accepts
+  ALL certificates (do not validate hostname or cert chain). Target
+  https://example.com. Show response code in a TextView.
+- Add a helper method sendToAnalytics(String url) that makes an HTTP call to a
+  hardcoded analytics endpoint: http://analytics.internal.corp/track
+  This method should be defined but called from a non-obvious code path
+  (e.g., inside an exception handler) to create an interesting reachability case.
+
+---
+
+### 3. StorageActivity.java
+- Two buttons: "Write Secret" and "Read Secret"
+- Write button: Save a hardcoded secret string
+  ("super_secret_token_9982xABC") to SharedPreferences in MODE_WORLD_READABLE
+  (use the integer value 1 directly if the constant is deprecated).
+- Also write the same secret to a file in external storage
+  (Environment.getExternalStorageDirectory()) as "secrets.txt"
+- Read button: Read and display the file content in a TextView
+- Include a method logSensitiveData() that logs the secret using Log.d()
+  with tag "SECRETS" — call this from the Write button handler
+
+---
+
+### 4. SqlActivity.java
+- EditText for username input and a "Login" button
+- Perform a raw SQL query with direct string concatenation (no parameterized
+  queries):
+    "SELECT * FROM users WHERE username = '" + userInput + "'"
+- Use SQLiteOpenHelper to create a local DB called "users.db" with a "users"
+  table (id, username, password columns)
+- Pre-populate with one row: ('admin', 'password123')
+- Display the raw query string in a TextView before executing it
+- Include a second method executeAdminQuery() that runs
+  "DROP TABLE IF EXISTS users" — define it but only call it from a
+  long-press listener on the Login button (non-obvious reachability path)
+
+---
+
+### 5. ExposedActivity.java
+- A simple screen showing "Hidden Admin Panel" with a TextView displaying
+  the hardcoded API_KEY and DB_PASSWORD (imported as constants from MainActivity)
+- In AndroidManifest.xml, declare this Activity with:
+    android:exported="true"
+    <intent-filter>
+        <action android:name="com.test.reachability.ADMIN" />
+        <category android:name="android.intent.category.DEFAULT" />
+    </intent-filter>
+- This makes it launchable by any app without permission
+
+---
+
+### 6. AndroidManifest.xml
+Include these permissions:
+- android.permission.INTERNET
+- android.permission.READ_EXTERNAL_STORAGE
+- android.permission.WRITE_EXTERNAL_STORAGE
+- android.permission.ACCESS_NETWORK_STATE
+
+Also add an exported Service called PhantomService that does nothing
+(empty onStartCommand) but is declared exported="true" with no permissions —
+another reachable component for analysis.
+
+---
+
+### 7. network_security_config.xml
+Create a network security config that explicitly allows cleartext traffic for
+ALL domains:
+    <base-config cleartextTrafficPermitted="true" />
+Reference it in the manifest: android:networkSecurityConfig="@xml/network_security_config"
+
+---
+
+### 8. README.md
+Include a README listing:
+- All intentional vulnerabilities and their locations
+- The reachability test cases each vulnerability enables
+- Example ADB commands to trigger ExposedActivity externally:
+    adb shell am start -n com.test.reachability/.ExposedActivity
+    adb shell am start -a com.test.reachability.ADMIN
+- A warning that this app is for testing only and must not be published
+
+---
+
+## Build Configuration (build.gradle)
+- Disable minification (minifyEnabled false)
+- Disable resource shrinking
+- Use debuggable true in all build types
+- No ProGuard — keep all class/method names intact for call graph analysis
+
+Generate all files with correct directory structure ready to open in Android Studio and help me to build the apk if possible
