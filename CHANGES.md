@@ -2,11 +2,11 @@
 
 ## What Changed
 
-The project was converted from a blank Kotlin/Compose template app into a Java-based Android application designed for security reachability analysis testing.
+The project was converted from a blank Kotlin/Compose template app into a Java-based Android application designed for security testing.
 
 ## Why
 
-The app serves as an intentionally vulnerable target so that security tools can practice detecting different types of vulnerabilities and tracing how they can be reached through the code.
+The app serves as an intentionally vulnerable target for SAST tools (e.g., MobSF) and reachability analysis. It contains real, reachable vulnerabilities for general static analysis testing, as well as separated dead code patterns for validating whether tools can distinguish reachable issues from unreachable code.
 
 ## What Was Added
 

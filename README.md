@@ -4,10 +4,10 @@
 
 ## Purpose
 
-This Android application serves as a deliberately vulnerable target for reachability analysis testing, including:
-- Network reachability analysis
-- Code/call graph reachability analysis
-- Android component reachability analysis
+This Android application serves as a deliberately vulnerable target for security testing, including:
+- **SAST (Static Application Security Testing)** — Contains real, reachable vulnerabilities mapped to MobSF rules with verified regex patterns, CWEs, and OWASP/MASVS references
+- **Reachability analysis** — Dead code patterns are separated into dedicated orphaned classes, allowing tools to be validated on whether they can distinguish reachable vulnerabilities from unreachable dead code
+- **Android component analysis** — Exported activities and services with no permission guards
 
 ## Intentional Vulnerabilities
 
