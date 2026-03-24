@@ -61,8 +61,9 @@ Each vulnerability is mapped to a specific **MobSF `android_rules.yaml`** rule, 
 - Displays hardcoded credentials to any caller
 - Contains hidden `View.GONE` element with backup secret in view hierarchy
 - **Reachability test**: Identify exported components accessible by external apps
-- **MobSF Rule**: `android_hiddenui` — `setVisibility\(View\.GONE\)`
-- **CWE**: CWE-919 | **OWASP Mobile**: M1 | **MASVS**: storage-7
+- **MobSF Rules**:
+  - `android_hiddenui` — `setVisibility\(View\.GONE\)` | **CWE**: CWE-919 | **OWASP Mobile**: M1 | **MASVS**: storage-7
+  - `android_hardcoded` — `secret\s*=\s*['"].{1,100}['"]` (hidden backup secret) | **CWE**: CWE-312 | **OWASP Mobile**: M9 | **MASVS**: storage-14
 
 ### 7. Exported Service with Logging (`PhantomService.java`)
 - Service declared `exported="true"` with no permissions
@@ -70,6 +71,12 @@ Each vulnerability is mapped to a specific **MobSF `android_rules.yaml`** rule, 
 - **Reachability test**: Identify exported components with no permission protection
 - **MobSF Rule**: `android_logging` — `Log\.(d)`
 - **CWE**: CWE-532 | **MASVS**: storage-3
+
+### 8. Database Helper with Raw SQL (`UserDatabaseHelper.java`)
+- Creates user table via `execSQL()` with hardcoded seed credentials (`admin` / `password123`)
+- Used by `SqlActivity` — reachable through the app's normal flow
+- **MobSF Rule**: `android_sql_raw_query` — `android\.database\.sqlite` AND `execSQL\(`
+- **CWE**: CWE-89 | **OWASP Mobile**: M7
 
 ## ADB Commands
 
@@ -117,15 +124,15 @@ Each dead code pattern is mapped to the **MobSF `android_rules.yaml`** rule it *
 
 ### Dead Code Pattern Details
 
-| Pattern | File | Simulated Vuln | MobSF Rule ID | Regex Pattern | Expected Result |
+| Pattern | File | Simulated Vuln | MobSF Rule IDs | Regex Patterns | Expected Result |
 |---|---|---|---|---|---|
-| Dead method: `leakCredentialsToUrl()` | DeadMainActivity.java | Credential exfil via HTTP | `android_hardcoded` + `android_ip_disclosure` | `key\s*=\s*['"].{1,100}['"]` + IP regex | NOT reachable |
+| Dead method: `leakCredentialsToUrl()` | DeadMainActivity.java | Credential exfil via HTTP | `android_hardcoded` + `android_ip_disclosure` + `android_logging` | `key\s*=\s*['"].{1,100}['"]` + IP regex (10.0.2.2) + `Log\.(e)` | NOT reachable |
 | Dead method: `nukeDatabase()` | DeadMainActivity.java | Destructive DB operation | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL\(` | NOT reachable |
-| Dead method: `writeCredsToExternalStorage()` | DeadMainActivity.java | Insecure file write | `android_read_write_external` | `\.getExternalStorage` | NOT reachable |
-| Dead method: `deadHttpBranch()` | DeadNetworkActivity.java | Credential in URL param | `android_ip_disclosure` | IP address regex (192.168.1.1) | NOT reachable |
-| Dead method: `deadAnalyticsEndpoint()` | DeadNetworkActivity.java | Cred exfil in analytics | `android_ip_disclosure` | IP address regex (172.16.0.5) | NOT reachable |
+| Dead method: `writeCredsToExternalStorage()` | DeadMainActivity.java | Insecure file write | `android_read_write_external` + `android_logging` | `\.getExternalStorage` + `Log\.(e)` | NOT reachable |
+| Dead method: `deadHttpBranch()` | DeadNetworkActivity.java | Credential in URL param | `android_ip_disclosure` + `android_logging` | IP regex (192.168.1.1) + `Log\.(e)` | NOT reachable |
+| Dead method: `deadAnalyticsEndpoint()` | DeadNetworkActivity.java | Cred exfil in analytics | `android_ip_disclosure` | IP regex (172.16.0.5) | NOT reachable |
 | Dead method: `deadDeleteSecrets()` | DeadStorageActivity.java | Secret log + file wipe | `android_logging` + `android_read_write_external` | `Log\.(d)` + `\.getExternalStorage` | NOT reachable |
 | Dead method: `deadDebugDump()` | DeadSqlActivity.java | Schema dump via raw SQL | `android_sql_raw_query` + `android_logging` | `rawQuery\(` + `Log\.(d)` | NOT reachable |
 | Dead method: `deadAdminQuery()` | DeadSqlActivity.java | Destructive SQL | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL\(` | NOT reachable |
-| Orphaned class: `DeadAdminClient` | DeadAdminClient.java | HTTP auth + contact exfil | `android_hardcoded` + `android_ip_disclosure` + `android_logging` | `password\s*=\s*['"].{1,100}['"]` + IP regex + `Log\.(d\|e)` | NOT reachable |
-| Orphaned class: `LegacyDataUploader` | LegacyDataUploader.java | Secrets upload via HTTP | `android_read_write_external` + `android_write_app_dir` + `android_ip_disclosure` | `\.getExternalStorage` + `Context\.MODE_PRIVATE` + IP regex | NOT reachable |
+| Orphaned class: `DeadAdminClient` | DeadAdminClient.java | HTTP auth + contact exfil | `android_hardcoded` + `android_ip_disclosure` + `android_logging` | `username\s*=\s*['"]...['"]` + `password\s*=\s*['"]...['"]` + IP regex (10.0.0.1) + `Log\.(d\|e)` | NOT reachable |
+| Orphaned class: `LegacyDataUploader` | LegacyDataUploader.java | Secrets upload via HTTP | `android_hardcoded` + `android_read_write_external` + `android_write_app_dir` + `android_ip_disclosure` + `android_logging` | `secret\s*=\s*['"]...['"]` + `\.getExternalStorage` + `Context\.MODE_PRIVATE` + IP regex (192.168.50.10) + `Log\.(e)` | NOT reachable |

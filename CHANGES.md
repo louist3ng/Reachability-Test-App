@@ -61,7 +61,9 @@ detection.
 | SQL Injection | `android_sql_raw_query` | `android\.database\.sqlite` AND `rawQuery(` |
 | Destructive SQL | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL(` |
 | Hidden UI Data | `android_hiddenui` | `setVisibility(View.GONE)` |
+| Hidden Backup Secret | `android_hardcoded` | `secret\s*=\s*['"].{1,100}['"]` |
 | Service Logging | `android_logging` | `Log\.(d)` |
+| DB Helper Raw SQL | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL(` |
 
 ### Code Changes Made
 - **NetworkActivity.java**: Changed HTTP URL to include IP address (10.0.2.2); replaced `setHostnameVerifier()` with `setDefaultHostnameVerifier()`; restructured `sendToAnalytics()` to use `if(true){throw}` pattern so dead code compiles; added IP addresses to dead code URLs
@@ -103,3 +105,21 @@ analysis tool should flag vulnerabilities in the activity/service files but NOT 
 ### Build Configuration
 - AGP upgraded from 8.1.4 to 8.7.3 (fixes JDK 21 jlink compatibility)
 - compileSdk/targetSdk upgraded from 33 to 35
+
+## MobSF Rule Audit
+
+Cross-referenced all source files (reachable and dead code) against the full MobSF
+`android_rules.yaml` rule set to verify regex pattern coverage.
+
+### Reachable Code Updates
+- **ExposedActivity.java**: Added `android_hardcoded` match — `secret = "backup_admin_secret_key_XJ9"` triggers `secret\s*=\s*['"].{1,100}['"]` (input_case: lower)
+- **UserDatabaseHelper.java**: Documented `android_sql_raw_query` match — `execSQL(` with `android.database.sqlite` import (reachable via SqlActivity)
+
+### Dead Code Updates
+- **DeadMainActivity.java**: Added missing `android_logging` matches for `Log.e()` in `leakCredentialsToUrl()` and `writeCredsToExternalStorage()`
+- **DeadNetworkActivity.java**: Added missing `android_logging` match for `Log.e()` in `deadHttpBranch()`
+- **LegacyDataUploader.java**: Added missing `android_hardcoded` match — `secret = "legacy_upload_secret_99x"` triggers `secret\s*=\s*['"].{1,100}['"]`
+- All dead code table entries now include complete MobSF rule ID lists with specific IP addresses and Log levels
+
+### Other
+- Added `app/mobsfrules.yaml` to `.gitignore` (reference file, not part of the build)
