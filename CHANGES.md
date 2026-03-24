@@ -12,9 +12,9 @@ The app serves as an intentionally vulnerable target so that security tools can 
 
 ### App Screens
 - **MainActivity** - Home screen with buttons to navigate to each demo screen. Also holds hardcoded credentials used across the app.
-- **NetworkActivity** - Demonstrates insecure network calls: plain HTTP requests and HTTPS with certificate validation turned off. Includes a hidden analytics call that only triggers during error handling.
+- **NetworkActivity** - Demonstrates insecure network calls: plain HTTP requests and HTTPS with certificate validation turned off.
 - **StorageActivity** - Demonstrates insecure data storage: writing secrets to world-readable preferences and external storage, plus logging sensitive data.
-- **SqlActivity** - Demonstrates SQL injection: user input is directly inserted into a database query without sanitization. A hidden "drop table" command is triggered by long-pressing the login button.
+- **SqlActivity** - Demonstrates SQL injection: user input is directly inserted into a database query without sanitization.
 - **ExposedActivity** - A "hidden admin panel" that displays credentials and can be opened by any app on the device without permission.
 - **PhantomService** - An empty background service that any app can start, with no permission protection.
 
@@ -71,3 +71,35 @@ detection.
 - **DeadAdminClient.java**: Added `username` and `password` as hardcoded string fields; changed URL to IP address
 - **LegacyDataUploader.java**: Added hardcoded `secret` field; changed URL to IP address
 - All vulnerability labels updated from generic OWASP/MASVS references to specific MobSF rule IDs with regex patterns
+
+## Weakness Separation
+
+Dead code and unreachable vulnerability patterns have been separated from reachable vulnerability
+files into dedicated orphaned classes for cleaner MobSF validation.
+
+### What Changed
+
+**Vulnerability files now contain ONLY reachable vulnerabilities:**
+- **MainActivity.java** — Removed `leakCredentialsToUrl()`, `nukeDatabase()`, `writeCredsToExternalStorage()`
+- **NetworkActivity.java** — Removed `if(false)` branch, `sendToAnalytics()` (dead code after throw), and calls to it
+- **StorageActivity.java** — Removed `conditionallyDeleteSecrets()` (dead branch where shouldDelete=false)
+- **SqlActivity.java** — Removed `if(debugMode==1)` dead branch, `executeAdminQuery()` (dead code after return), and long-click listener
+
+**New dedicated dead code files (orphaned classes, never instantiated):**
+- **DeadMainActivity.java** — Dead methods from MainActivity: credential leak via HTTP, database nuke, external storage write
+- **DeadNetworkActivity.java** — Dead patterns from NetworkActivity: if(false) HTTP branch, analytics endpoint dead code
+- **DeadStorageActivity.java** — Dead patterns from StorageActivity: conditional delete with always-false flag
+- **DeadSqlActivity.java** — Dead patterns from SqlActivity: debug dump branch, admin query after return
+
+**Existing dead code files (unchanged):**
+- **DeadAdminClient.java** — Already an orphaned class
+- **LegacyDataUploader.java** — Already an orphaned class
+
+### Why
+Separating dead code into dedicated files makes it easier to validate MobSF findings by comparing
+which vulnerabilities are detected in "reachable" files vs "dead code" files. A correct reachability
+analysis tool should flag vulnerabilities in the activity/service files but NOT in the Dead* files.
+
+### Build Configuration
+- AGP upgraded from 8.1.4 to 8.7.3 (fixes JDK 21 jlink compatibility)
+- compileSdk/targetSdk upgraded from 33 to 35

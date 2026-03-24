@@ -39,14 +39,7 @@ Each vulnerability is mapped to a specific **MobSF `android_rules.yaml`** rule, 
 - **MobSF Rule**: `android_insecure_ssl` — `javax\.net\.ssl` AND `\.setDefaultHostnameVerifier\(`
 - **CWE**: CWE-295 | **OWASP Mobile**: M3 | **MASVS**: network-3
 
-### 4. Hidden Analytics Endpoint (`NetworkActivity.java`)
-- `sendToAnalytics()` contains HTTP call to hardcoded IP `http://172.16.0.5/track`
-- Method is called from exception handlers but throws immediately (dead code after throw)
-- **Reachability test**: Discover network calls hidden in non-obvious code paths (exception handlers)
-- **MobSF Rule**: `android_ip_disclosure` — IP address regex pattern
-- **CWE**: CWE-200 | **MASVS**: code-2
-
-### 5. Insecure Storage (`StorageActivity.java`)
+### 4. Insecure Storage (`StorageActivity.java`)
 - SharedPreferences opened with `MODE_WORLD_READABLE` — any app can read
 - Secret token written to external storage as plaintext (`secrets.txt`)
 - `logSensitiveData()` logs the secret via `Log.d()` with tag "SECRETS"
@@ -56,21 +49,14 @@ Each vulnerability is mapped to a specific **MobSF `android_rules.yaml`** rule, 
   - `android_read_write_external` — `\.getExternalStorage` | **CWE**: CWE-276 | **OWASP Mobile**: M2 | **MASVS**: storage-2
   - `android_logging` — `Log\.(d)` | **CWE**: CWE-532 | **MASVS**: storage-3
 
-### 6. SQL Injection (`SqlActivity.java`)
+### 5. SQL Injection (`SqlActivity.java`)
 - `performLogin()` builds SQL query via direct string concatenation with user input
 - No parameterized queries or input sanitization
 - **Reachability test**: Trace user input from EditText → raw SQL query execution
 - **MobSF Rule**: `android_sql_raw_query` — `android\.database\.sqlite` AND (`rawQuery\(` | `execSQL\(`)
 - **CWE**: CWE-89 | **OWASP Mobile**: M7
 
-### 7. Destructive Hidden Query (`SqlActivity.java`)
-- `executeAdminQuery()` contains `DROP TABLE` via `execSQL()` (dead code after early return)
-- Only reachable via long-press on the Login button (non-obvious reachability path)
-- **Reachability test**: Discover destructive DB operations through UI event analysis
-- **MobSF Rule**: `android_sql_raw_query` — `android\.database\.sqlite` AND `execSQL\(`
-- **CWE**: CWE-89 | **OWASP Mobile**: M7
-
-### 8. Exported Activity with Hidden Data (`ExposedActivity.java`)
+### 6. Exported Activity with Hidden Data (`ExposedActivity.java`)
 - Declared `exported="true"` with a custom intent filter, no permission checks
 - Displays hardcoded credentials to any caller
 - Contains hidden `View.GONE` element with backup secret in view hierarchy
@@ -78,7 +64,7 @@ Each vulnerability is mapped to a specific **MobSF `android_rules.yaml`** rule, 
 - **MobSF Rule**: `android_hiddenui` — `setVisibility\(View\.GONE\)`
 - **CWE**: CWE-919 | **OWASP Mobile**: M1 | **MASVS**: storage-7
 
-### 9. Exported Service with Logging (`PhantomService.java`)
+### 7. Exported Service with Logging (`PhantomService.java`)
 - Service declared `exported="true"` with no permissions
 - Logs all incoming intent data to system log, leaking caller information
 - **Reachability test**: Identify exported components with no permission protection
@@ -110,20 +96,36 @@ The debug APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Dead Code Test Cases
 
-The following intentionally unreachable/dead vulnerable code patterns have been injected.
+All dead code patterns have been **separated into dedicated files** for cleaner validation.
+Vulnerability files (e.g., `NetworkActivity.java`) now contain only reachable vulnerabilities.
+Dead code lives in orphaned classes that are never instantiated or referenced.
+
 A correctly functioning reachability analysis tool should **NOT** flag any of these as reachable issues.
 
 Each dead code pattern is mapped to the **MobSF `android_rules.yaml`** rule it *simulates* (if it were reachable).
 
+### Dedicated Dead Code Files
+
+| File | Origin | Description |
+|---|---|---|
+| `DeadMainActivity.java` | Extracted from `MainActivity.java` | `leakCredentialsToUrl()`, `nukeDatabase()`, `writeCredsToExternalStorage()` |
+| `DeadNetworkActivity.java` | Extracted from `NetworkActivity.java` | `if(false)` HTTP branch, `sendToAnalytics()` dead code after throw |
+| `DeadStorageActivity.java` | Extracted from `StorageActivity.java` | `conditionallyDeleteSecrets()` dead branch (shouldDelete=false) |
+| `DeadSqlActivity.java` | Extracted from `SqlActivity.java` | `if(debugMode==1)` dead branch, `executeAdminQuery()` dead code after return |
+| `DeadAdminClient.java` | Original orphaned class | Hardcoded credentials, IP disclosure, contact exfiltration |
+| `LegacyDataUploader.java` | Original orphaned class | External storage read, IP disclosure, hardcoded secret |
+
+### Dead Code Pattern Details
+
 | Pattern | File | Simulated Vuln | MobSF Rule ID | Regex Pattern | Expected Result |
 |---|---|---|---|---|---|
-| Dead method: `leakCredentialsToUrl()` | MainActivity.java | Credential exfil via HTTP | `android_hardcoded` + `android_ip_disclosure` | `key\s*=\s*['"].{1,100}['"]` + IP regex | NOT reachable |
-| Dead method: `nukeDatabase()` | MainActivity.java | Destructive DB operation | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL\(` | NOT reachable |
-| Dead method: `writeCredsToExternalStorage()` | MainActivity.java | Insecure file write | `android_read_write_external` | `\.getExternalStorage` | NOT reachable |
-| `if(false)` branch | NetworkActivity.java | Credential in URL param | `android_ip_disclosure` | IP address regex (192.168.1.1) | NOT reachable |
-| `if(shouldDelete==false)` branch | StorageActivity.java | Secret log + file wipe | `android_logging` + `android_read_write_external` | `Log\.(d)` + `\.getExternalStorage` | NOT reachable |
-| `if(debugMode==1)` branch | SqlActivity.java | Schema dump via raw SQL | `android_sql_raw_query` + `android_logging` | `rawQuery\(` + `Log\.(d)` | NOT reachable |
+| Dead method: `leakCredentialsToUrl()` | DeadMainActivity.java | Credential exfil via HTTP | `android_hardcoded` + `android_ip_disclosure` | `key\s*=\s*['"].{1,100}['"]` + IP regex | NOT reachable |
+| Dead method: `nukeDatabase()` | DeadMainActivity.java | Destructive DB operation | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL\(` | NOT reachable |
+| Dead method: `writeCredsToExternalStorage()` | DeadMainActivity.java | Insecure file write | `android_read_write_external` | `\.getExternalStorage` | NOT reachable |
+| Dead method: `deadHttpBranch()` | DeadNetworkActivity.java | Credential in URL param | `android_ip_disclosure` | IP address regex (192.168.1.1) | NOT reachable |
+| Dead method: `deadAnalyticsEndpoint()` | DeadNetworkActivity.java | Cred exfil in analytics | `android_ip_disclosure` | IP address regex (172.16.0.5) | NOT reachable |
+| Dead method: `deadDeleteSecrets()` | DeadStorageActivity.java | Secret log + file wipe | `android_logging` + `android_read_write_external` | `Log\.(d)` + `\.getExternalStorage` | NOT reachable |
+| Dead method: `deadDebugDump()` | DeadSqlActivity.java | Schema dump via raw SQL | `android_sql_raw_query` + `android_logging` | `rawQuery\(` + `Log\.(d)` | NOT reachable |
+| Dead method: `deadAdminQuery()` | DeadSqlActivity.java | Destructive SQL | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL\(` | NOT reachable |
 | Orphaned class: `DeadAdminClient` | DeadAdminClient.java | HTTP auth + contact exfil | `android_hardcoded` + `android_ip_disclosure` + `android_logging` | `password\s*=\s*['"].{1,100}['"]` + IP regex + `Log\.(d\|e)` | NOT reachable |
 | Orphaned class: `LegacyDataUploader` | LegacyDataUploader.java | Secrets upload via HTTP | `android_read_write_external` + `android_write_app_dir` + `android_ip_disclosure` | `\.getExternalStorage` + `Context\.MODE_PRIVATE` + IP regex | NOT reachable |
-| Code after return | SqlActivity.java | Destructive SQL | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL\(` | NOT reachable |
-| Code after `if(true){throw}` | NetworkActivity.java | Cred exfil in analytics | `android_ip_disclosure` | IP address regex (172.16.0.5) | NOT reachable |
