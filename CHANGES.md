@@ -38,3 +38,36 @@ The app serves as an intentionally vulnerable target so that security tools can 
 - Target SDK changed from 36 to 33
 - Code minification and resource shrinking disabled
 - All build types set to debuggable for easier analysis
+
+## MobSF android_rules.yaml Weakness Mapping
+
+All vulnerability labels (both live and dead code) have been remapped to specific MobSF
+`android_rules.yaml` rules. Each vulnerability's source code was verified (and where
+necessary, rewritten) to contain the exact regex patterns that MobSF's scanner uses for
+detection.
+
+### Rule Mapping Summary
+
+| Vulnerability | MobSF Rule ID | Pattern Verified |
+|---|---|---|
+| Hardcoded Credentials | `android_hardcoded` | `password\s*=\s*['"].{1,100}['"]`, `key\s*=\s*['"].{1,100}['"]` |
+| Credential Logging | `android_logging` | `Log\.(d)` |
+| Cleartext HTTP + IP | `android_ip_disclosure` | IP address regex (10.0.2.2) |
+| Disabled SSL | `android_insecure_ssl` | `javax\.net\.ssl` AND `.setDefaultHostnameVerifier(` |
+| Hidden Analytics | `android_ip_disclosure` | IP address regex (172.16.0.5) |
+| World-Readable Prefs | `android_world_readable` | `MODE_WORLD_READABLE` |
+| External Storage | `android_read_write_external` | `.getExternalStorage` |
+| Sensitive Log Data | `android_logging` | `Log\.(d)` |
+| SQL Injection | `android_sql_raw_query` | `android\.database\.sqlite` AND `rawQuery(` |
+| Destructive SQL | `android_sql_raw_query` | `android\.database\.sqlite` AND `execSQL(` |
+| Hidden UI Data | `android_hiddenui` | `setVisibility(View.GONE)` |
+| Service Logging | `android_logging` | `Log\.(d)` |
+
+### Code Changes Made
+- **NetworkActivity.java**: Changed HTTP URL to include IP address (10.0.2.2); replaced `setHostnameVerifier()` with `setDefaultHostnameVerifier()`; restructured `sendToAnalytics()` to use `if(true){throw}` pattern so dead code compiles; added IP addresses to dead code URLs
+- **StorageActivity.java**: Changed `getSharedPreferences("secrets", 1)` to use `MODE_WORLD_READABLE` constant
+- **ExposedActivity.java**: Added hidden `View.GONE` element with backup secret to trigger `android_hiddenui`
+- **PhantomService.java**: Added `Log.d()` calls to log intent data, triggering `android_logging`
+- **DeadAdminClient.java**: Added `username` and `password` as hardcoded string fields; changed URL to IP address
+- **LegacyDataUploader.java**: Added hardcoded `secret` field; changed URL to IP address
+- All vulnerability labels updated from generic OWASP/MASVS references to specific MobSF rule IDs with regex patterns

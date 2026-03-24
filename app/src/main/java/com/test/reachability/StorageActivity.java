@@ -48,13 +48,19 @@ public class StorageActivity extends AppCompatActivity {
     }
 
     // VULNERABILITY: Insecure Data Storage — World-readable SharedPreferences + External Storage
-    // OWASP Mobile Top 10 2024: M9 (Insecure Data Storage)
-    // MASVS: MASVS-STORAGE (Sensitive Data Stored Unprotected)
-    // MASTG: MASTG-ANDROID-STORE (Testing Local Storage for Sensitive Data)
+    // MobSF Rule: android_world_readable
+    // Pattern: MODE_WORLD_READABLE | \.getSharedPreferences\(.{0,50}?1\) | openFileOutput\(...,1\)
+    // input_case: exact | type: RegexOr
+    // CWE: CWE-276 | OWASP Mobile: M2 | MASVS: storage-2
+    //
+    // Also triggers:
+    // MobSF Rule: android_read_write_external
+    // Pattern: \.getExternalStorage | \.getExternalFilesDir\(
+    // CWE: CWE-276 | OWASP Mobile: M2 | MASVS: storage-2
     @SuppressWarnings("deprecation")
     private void writeSecret() {
-        // World-readable SharedPreferences (MODE_WORLD_READABLE = 1) — any app can read this
-        SharedPreferences prefs = getSharedPreferences("secrets", 1); // 1 = MODE_WORLD_READABLE
+        // World-readable SharedPreferences — MODE_WORLD_READABLE — any app can read this
+        SharedPreferences prefs = getSharedPreferences("secrets", MODE_WORLD_READABLE);
         prefs.edit().putString("token", SECRET).apply();
 
         // Plaintext secret on external storage — globally readable by any app
@@ -87,9 +93,10 @@ public class StorageActivity extends AppCompatActivity {
     }
 
     // VULNERABILITY: Sensitive data leakage via Android system log
-    // OWASP Mobile Top 10 2024: M9 (Insecure Data Storage)
-    // MASVS: MASVS-STORAGE (Data Exposure Through Logging)
-    // MASTG: MASTG-ANDROID-STORE (Testing Logs for Sensitive Data)
+    // MobSF Rule: android_logging
+    // Pattern: Log\.(v|d|i|w|e|f|s)|System\.out\.print|System\.err\.print
+    // input_case: exact | type: Regex
+    // CWE: CWE-532 | OWASP Mobile: (info) | MASVS: storage-3
     private void logSensitiveData() {
         Log.d("SECRETS", "Stored token: " + SECRET);
     }
@@ -99,9 +106,9 @@ public class StorageActivity extends AppCompatActivity {
         boolean shouldDelete = false; // never changes
         if (shouldDelete) {
             // DEAD BRANCH - reachability test: should NOT be flagged
-            // Simulated Weakness: M9 (Insecure Data Storage)
-            // MASVS: MASVS-STORAGE (Data Exposure Through Logging + Insecure File Deletion)
-            // MASTG: MASTG-ANDROID-STORE (Testing Logs for Sensitive Data)
+            // Simulated MobSF Rule: android_logging + android_read_write_external
+            // Pattern: Log\.(d) AND \.getExternalStorage
+            // CWE: CWE-532, CWE-276 | OWASP Mobile: M2 | MASVS: storage-3, storage-2
             File f = new File(Environment.getExternalStorageDirectory(),
                               "secrets.txt");
             f.delete();

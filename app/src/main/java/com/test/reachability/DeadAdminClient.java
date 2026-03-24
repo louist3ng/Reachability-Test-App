@@ -2,16 +2,20 @@ package com.test.reachability;
 
 // ORPHANED CLASS - reachability test: should NOT be flagged
 //
-// Simulated Weaknesses:
+// Simulated MobSF Rules:
 //   authenticate() →
-//     M1 (Improper Credential Usage) + M5 (Insecure Communication)
-//     MASVS: MASVS-CRYPTO (Hardcoded Credentials) + MASVS-NETWORK-1 (Cleartext HTTP POST)
-//     MASTG: MASTG-ANDROID-CRYPT (Testing Hardcoded Credentials)
-//            MASTG-ANDROID-NET (Testing for Cleartext Traffic)
+//     MobSF Rule: android_hardcoded
+//     Pattern: (username\s*=\s*['|"].{1,100}['|"]) | (password\s*=\s*['|"].{1,100}['|"])
+//     input_case: lower | type: Regex
+//     CWE: CWE-312 | OWASP Mobile: M9 | MASVS: storage-14
+//
+//     MobSF Rule: android_ip_disclosure (IP address in URL)
+//     CWE: CWE-200 | MASVS: code-2
+//
 //   exfiltrateContacts() →
-//     M6 (Inadequate Privacy Controls)
-//     MASVS: MASVS-PRIVACY (Unauthorized Access to User Data)
-//     MASTG: MASTG-ANDROID-PLAT (Testing for Sensitive Data Disclosure Through Logging)
+//     MobSF Rule: android_logging
+//     Pattern: Log\.(v|d|i|w|e|f|s)
+//     CWE: CWE-532 | MASVS: storage-3
 
 import android.content.Context;
 import android.database.Cursor;
@@ -32,18 +36,23 @@ public class DeadAdminClient {
 
     private final Context context;
 
+    // Hardcoded credentials — matches MobSF android_hardcoded pattern
+    private static final String username = "superadmin";
+    private static final String password = "letmein999";
+
     public DeadAdminClient(Context context) {
         this.context = context;
     }
 
     public void authenticate() {
         try {
-            URL url = new URL("http://internal.admin.corp/api/login");
+            // IP address disclosure — matches MobSF android_ip_disclosure
+            URL url = new URL("http://10.0.0.1/api/login");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             OutputStream os = connection.getOutputStream();
-            os.write("user=superadmin&pass=letmein999".getBytes());
+            os.write(("user=" + username + "&pass=" + password).getBytes());
             os.close();
             connection.getResponseCode();
             connection.disconnect();

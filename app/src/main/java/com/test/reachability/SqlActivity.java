@@ -54,9 +54,10 @@ public class SqlActivity extends AppCompatActivity {
     }
 
     // VULNERABILITY: SQL Injection via unsanitized user input
-    // OWASP Mobile Top 10 2024: M4 (Insufficient Input/Output Validation)
-    // MASVS: MASVS-CODE (Injection Flaws — SQL Injection)
-    // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
+    // MobSF Rule: android_sql_raw_query
+    // Pattern: android\.database\.sqlite AND (rawQuery\( | execSQL\()
+    // input_case: exact | type: RegexAndOr
+    // CWE: CWE-89 | OWASP Mobile: M7 | MASVS: (none)
     private void performLogin() {
         String userInput = etUsername.getText().toString();
 
@@ -80,9 +81,9 @@ public class SqlActivity extends AppCompatActivity {
             int debugMode = 0; // hardcoded, never reassigned
             if (debugMode == 1) {
                 // DEAD BRANCH - reachability test: should NOT be flagged
-                // Simulated Weakness: M4 (Insufficient Input/Output Validation)
-                // MASVS: MASVS-CODE (Information Disclosure via Raw SQL Schema Dump)
-                // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
+                // Simulated MobSF Rule: android_sql_raw_query + android_logging
+                // Pattern: rawQuery\( AND Log\.(d)
+                // CWE: CWE-89, CWE-532 | OWASP Mobile: M7 | MASVS: storage-3
                 String dumpQuery = "SELECT * FROM sqlite_master WHERE type='table'";
                 Cursor c = db.rawQuery(dumpQuery, null);
                 String result = "";
@@ -104,9 +105,9 @@ public class SqlActivity extends AppCompatActivity {
             return; // always exits here
         }
         // DEAD CODE AFTER RETURN - reachability test: should NOT be flagged
-        // Simulated Weakness: M4 (Insufficient Input/Output Validation)
-        // MASVS: MASVS-CODE (Destructive SQL Execution)
-        // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
+        // Simulated MobSF Rule: android_sql_raw_query
+        // Pattern: android\.database\.sqlite AND execSQL\(
+        // CWE: CWE-89 | OWASP Mobile: M7 | MASVS: (none)
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("DROP TABLE IF EXISTS users");
         db.execSQL("GRANT ALL PRIVILEGES ON *.* TO 'hacker'@'%'");

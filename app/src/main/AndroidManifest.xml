@@ -28,8 +28,9 @@
         <activity android:name=".StorageActivity" android:exported="false" />
         <activity android:name=".SqlActivity" android:exported="false" />
 
-        <!-- VULNERABILITY: Exported Activity Without Permission
-             OWASP M8 (Security Misconfiguration) / MASVS-PLATFORM / MASTG-ANDROID-PLAT -->
+        <!-- VULNERABILITY: Exported Activity — triggers android_hiddenui + android_hardcoded in code
+             MobSF Rule (code): android_hiddenui (CWE-919, M1, storage-7)
+             MobSF Rule (code): android_hardcoded (CWE-312, M9, storage-14) -->
         <activity
             android:name=".ExposedActivity"
             android:exported="true">
@@ -39,8 +40,8 @@
             </intent-filter>
         </activity>
 
-        <!-- VULNERABILITY: Exported Service Without Permission
-             OWASP M8 (Security Misconfiguration) / MASVS-PLATFORM / MASTG-ANDROID-PLAT -->
+        <!-- VULNERABILITY: Exported Service — triggers android_logging in code
+             MobSF Rule (code): android_logging (CWE-532, storage-3) -->
         <service
             android:name=".PhantomService"
             android:exported="true" />

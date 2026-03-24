@@ -1,15 +1,21 @@
 package com.test.reachability;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-// VULNERABILITY: Exported Activity Without Permission Guard
-// OWASP Mobile Top 10 2024: M8 (Security Misconfiguration)
-// MASVS: MASVS-PLATFORM (Exported Component Without Permission Protection)
-// MASTG: MASTG-ANDROID-PLAT (Testing for Sensitive Data Disclosure Through IPC)
+// VULNERABILITY: Exported Activity with hidden sensitive data in view hierarchy
+// MobSF Rule: android_hiddenui
+// Pattern: setVisibility\(View\.GONE\) | setVisibility\(View\.INVISIBLE\)
+// input_case: exact | type: Regex
+// CWE: CWE-919 | OWASP Mobile: M1 | MASVS: storage-7
+//
+// Also triggers:
+// MobSF Rule: android_hardcoded (via hardcoded secret displayed in hidden view)
+// CWE: CWE-312 | OWASP Mobile: M9 | MASVS: storage-14
 //
 // This Activity is declared exported="true" in AndroidManifest.xml with a custom
 // intent-filter (com.test.reachability.ADMIN) but requires NO permission to launch.
@@ -40,6 +46,14 @@ public class ExposedActivity extends AppCompatActivity {
         tvDbPassword.setText("DB Password: " + MainActivity.DB_PASSWORD);
         tvDbPassword.setPadding(0, 16, 0, 0);
         layout.addView(tvDbPassword);
+
+        // Hidden view containing backup secret — invisible but present in view hierarchy
+        // Matches MobSF android_hiddenui: setVisibility(View.GONE)
+        TextView tvHiddenSecret = new TextView(this);
+        String secret = "backup_admin_secret_key_XJ9";
+        tvHiddenSecret.setText("Backup Secret: " + secret);
+        tvHiddenSecret.setVisibility(View.GONE);
+        layout.addView(tvHiddenSecret);
 
         setContentView(layout);
     }
