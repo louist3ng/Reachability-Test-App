@@ -1,6 +1,17 @@
 package com.test.reachability;
 
 // ORPHANED CLASS - reachability test: should NOT be flagged
+//
+// Simulated Weaknesses:
+//   authenticate() →
+//     M1 (Improper Credential Usage) + M5 (Insecure Communication)
+//     MASVS: MASVS-CRYPTO (Hardcoded Credentials) + MASVS-NETWORK-1 (Cleartext HTTP POST)
+//     MASTG: MASTG-ANDROID-CRYPT (Testing Hardcoded Credentials)
+//            MASTG-ANDROID-NET (Testing for Cleartext Traffic)
+//   exfiltrateContacts() →
+//     M6 (Inadequate Privacy Controls)
+//     MASVS: MASVS-PRIVACY (Unauthorized Access to User Data)
+//     MASTG: MASTG-ANDROID-PLAT (Testing for Sensitive Data Disclosure Through Logging)
 
 import android.content.Context;
 import android.database.Cursor;

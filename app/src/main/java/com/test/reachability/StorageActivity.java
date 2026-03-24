@@ -99,6 +99,9 @@ public class StorageActivity extends AppCompatActivity {
         boolean shouldDelete = false; // never changes
         if (shouldDelete) {
             // DEAD BRANCH - reachability test: should NOT be flagged
+            // Simulated Weakness: M9 (Insecure Data Storage)
+            // MASVS: MASVS-STORAGE (Data Exposure Through Logging + Insecure File Deletion)
+            // MASTG: MASTG-ANDROID-STORE (Testing Logs for Sensitive Data)
             File f = new File(Environment.getExternalStorageDirectory(),
                               "secrets.txt");
             f.delete();

@@ -114,15 +114,17 @@ The debug APK will be at `app/build/outputs/apk/debug/app-debug.apk`.
 The following intentionally unreachable/dead vulnerable code patterns have been injected.
 A correctly functioning reachability analysis tool should **NOT** flag any of these as reachable issues.
 
-| Pattern | File | Simulated Vuln | Expected Tool Result |
-|---|---|---|---|
-| Dead method: `leakCredentialsToUrl()` | MainActivity.java | Credential exfil via HTTP | NOT reachable |
-| Dead method: `nukeDatabase()` | MainActivity.java | Destructive DB operation | NOT reachable |
-| Dead method: `writeCredsToExternalStorage()` | MainActivity.java | Insecure file write | NOT reachable |
-| `if(false)` branch | NetworkActivity.java | Credential in URL param | NOT reachable |
-| `if(shouldDelete==false)` branch | StorageActivity.java | Secret log + file wipe | NOT reachable |
-| `if(debugMode==1)` branch | SqlActivity.java | Schema dump via raw SQL | NOT reachable |
-| Orphaned class: `DeadAdminClient` | DeadAdminClient.java | HTTP auth + contact exfil | NOT reachable |
-| Orphaned class: `LegacyDataUploader` | LegacyDataUploader.java | Secrets upload via HTTP | NOT reachable |
-| Code after return | SqlActivity.java | Destructive SQL | NOT reachable |
-| Code after throw | NetworkActivity.java | Cred exfil in analytics | NOT reachable |
+Each dead code pattern is also mapped to the OWASP weakness it *simulates* (if it were reachable).
+
+| Pattern | File | Simulated Vuln | OWASP Mapping | Expected Tool Result |
+|---|---|---|---|---|
+| Dead method: `leakCredentialsToUrl()` | MainActivity.java | Credential exfil via HTTP | M1 + M5 / MASVS-NETWORK-1 / MASTG-ANDROID-NET | NOT reachable |
+| Dead method: `nukeDatabase()` | MainActivity.java | Destructive DB operation | M4 / MASVS-CODE / MASTG-ANDROID-CODE | NOT reachable |
+| Dead method: `writeCredsToExternalStorage()` | MainActivity.java | Insecure file write | M9 / MASVS-STORAGE / MASTG-ANDROID-STORE | NOT reachable |
+| `if(false)` branch | NetworkActivity.java | Credential in URL param | M1 + M5 / MASVS-NETWORK-1 / MASTG-ANDROID-NET | NOT reachable |
+| `if(shouldDelete==false)` branch | StorageActivity.java | Secret log + file wipe | M9 / MASVS-STORAGE / MASTG-ANDROID-STORE | NOT reachable |
+| `if(debugMode==1)` branch | SqlActivity.java | Schema dump via raw SQL | M4 / MASVS-CODE / MASTG-ANDROID-CODE | NOT reachable |
+| Orphaned class: `DeadAdminClient` | DeadAdminClient.java | HTTP auth + contact exfil | M1 + M5 + M6 / MASVS-CRYPTO, MASVS-NETWORK-1, MASVS-PRIVACY | NOT reachable |
+| Orphaned class: `LegacyDataUploader` | LegacyDataUploader.java | Secrets upload via HTTP | M9 + M5 / MASVS-STORAGE, MASVS-NETWORK-1 | NOT reachable |
+| Code after return | SqlActivity.java | Destructive SQL | M4 / MASVS-CODE / MASTG-ANDROID-CODE | NOT reachable |
+| Code after throw | NetworkActivity.java | Cred exfil in analytics | M1 + M5 / MASVS-NETWORK-1 / MASTG-ANDROID-NET | NOT reachable |

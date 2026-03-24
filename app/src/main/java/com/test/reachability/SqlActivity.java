@@ -80,7 +80,9 @@ public class SqlActivity extends AppCompatActivity {
             int debugMode = 0; // hardcoded, never reassigned
             if (debugMode == 1) {
                 // DEAD BRANCH - reachability test: should NOT be flagged
-                // Raw query with full schema dump
+                // Simulated Weakness: M4 (Insufficient Input/Output Validation)
+                // MASVS: MASVS-CODE (Information Disclosure via Raw SQL Schema Dump)
+                // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
                 String dumpQuery = "SELECT * FROM sqlite_master WHERE type='table'";
                 Cursor c = db.rawQuery(dumpQuery, null);
                 String result = "";
@@ -102,6 +104,9 @@ public class SqlActivity extends AppCompatActivity {
             return; // always exits here
         }
         // DEAD CODE AFTER RETURN - reachability test: should NOT be flagged
+        // Simulated Weakness: M4 (Insufficient Input/Output Validation)
+        // MASVS: MASVS-CODE (Destructive SQL Execution)
+        // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.execSQL("DROP TABLE IF EXISTS users");
         db.execSQL("GRANT ALL PRIVILEGES ON *.* TO 'hacker'@'%'");

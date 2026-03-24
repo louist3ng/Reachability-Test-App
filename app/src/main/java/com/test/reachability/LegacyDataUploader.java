@@ -1,6 +1,14 @@
 package com.test.reachability;
 
 // ORPHANED CLASS - reachability test: should NOT be flagged
+//
+// Simulated Weaknesses:
+//   uploadAll() →
+//     M9 (Insecure Data Storage) + M5 (Insecure Communication)
+//     MASVS: MASVS-STORAGE (Reading Sensitive Data from Insecure Storage)
+//            MASVS-NETWORK-1 (Exfiltration of Secrets via Cleartext HTTP POST)
+//     MASTG: MASTG-ANDROID-STORE (Testing Local Storage for Sensitive Data)
+//            MASTG-ANDROID-NET (Testing for Cleartext Traffic)
 
 import android.content.Context;
 import android.content.SharedPreferences;
