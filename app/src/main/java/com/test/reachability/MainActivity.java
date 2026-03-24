@@ -17,7 +17,10 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Intentionally hardcoded credentials for reachability analysis testing
+    // VULNERABILITY: Hardcoded Credentials
+    // OWASP Mobile Top 10 2024: M1 (Improper Credential Usage)
+    // MASVS: MASVS-CRYPTO (Hardcoded Cryptographic Keys)
+    // MASTG: MASTG-ANDROID-CRYPT (Testing Hardcoded Credentials)
     public static final String API_KEY = "sk-prod-ABC123hardcodedSecret999";
     public static final String DB_PASSWORD = "admin1234!";
 
@@ -56,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
         logCredentials();
     }
 
+    // VULNERABILITY: Sensitive data leakage via Android logging
+    // OWASP Mobile Top 10 2024: M9 (Insecure Data Storage)
+    // MASVS: MASVS-STORAGE (Data Exposure Through Logging)
+    // MASTG: MASTG-ANDROID-STORE (Testing Logs for Sensitive Data)
     private void logCredentials() {
         Log.d(TAG, "App initialized with key: " + API_KEY);
         Log.d(TAG, "DB access with: " + DB_PASSWORD);

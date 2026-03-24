@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- VULNERABILITY: Cleartext traffic permitted for all domains
+     OWASP Mobile Top 10 2024: M5 (Insecure Communication)
+     MASVS: MASVS-NETWORK-1 (Cleartext Traffic Allowed)
+     MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic) -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

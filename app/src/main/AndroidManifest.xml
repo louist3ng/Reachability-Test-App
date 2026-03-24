@@ -28,6 +28,8 @@
         <activity android:name=".StorageActivity" android:exported="false" />
         <activity android:name=".SqlActivity" android:exported="false" />
 
+        <!-- VULNERABILITY: Exported Activity Without Permission
+             OWASP M8 (Security Misconfiguration) / MASVS-PLATFORM / MASTG-ANDROID-PLAT -->
         <activity
             android:name=".ExposedActivity"
             android:exported="true">
@@ -37,6 +39,8 @@
             </intent-filter>
         </activity>
 
+        <!-- VULNERABILITY: Exported Service Without Permission
+             OWASP M8 (Security Misconfiguration) / MASVS-PLATFORM / MASTG-ANDROID-PLAT -->
         <service
             android:name=".PhantomService"
             android:exported="true" />

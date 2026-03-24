@@ -47,13 +47,17 @@ public class StorageActivity extends AppCompatActivity {
         setContentView(layout);
     }
 
+    // VULNERABILITY: Insecure Data Storage — World-readable SharedPreferences + External Storage
+    // OWASP Mobile Top 10 2024: M9 (Insecure Data Storage)
+    // MASVS: MASVS-STORAGE (Sensitive Data Stored Unprotected)
+    // MASTG: MASTG-ANDROID-STORE (Testing Local Storage for Sensitive Data)
     @SuppressWarnings("deprecation")
     private void writeSecret() {
-        // Write to SharedPreferences with MODE_WORLD_READABLE (insecure)
+        // World-readable SharedPreferences (MODE_WORLD_READABLE = 1) — any app can read this
         SharedPreferences prefs = getSharedPreferences("secrets", 1); // 1 = MODE_WORLD_READABLE
         prefs.edit().putString("token", SECRET).apply();
 
-        // Write to external storage (insecure)
+        // Plaintext secret on external storage — globally readable by any app
         try {
             @SuppressWarnings("deprecation")
             File file = new File(Environment.getExternalStorageDirectory(), "secrets.txt");
@@ -82,6 +86,10 @@ public class StorageActivity extends AppCompatActivity {
         }
     }
 
+    // VULNERABILITY: Sensitive data leakage via Android system log
+    // OWASP Mobile Top 10 2024: M9 (Insecure Data Storage)
+    // MASVS: MASVS-STORAGE (Data Exposure Through Logging)
+    // MASTG: MASTG-ANDROID-STORE (Testing Logs for Sensitive Data)
     private void logSensitiveData() {
         Log.d("SECRETS", "Stored token: " + SECRET);
     }

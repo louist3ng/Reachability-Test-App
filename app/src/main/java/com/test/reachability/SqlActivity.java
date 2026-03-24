@@ -53,10 +53,14 @@ public class SqlActivity extends AppCompatActivity {
         dbHelper = new UserDatabaseHelper(this);
     }
 
+    // VULNERABILITY: SQL Injection via unsanitized user input
+    // OWASP Mobile Top 10 2024: M4 (Insufficient Input/Output Validation)
+    // MASVS: MASVS-CODE (Injection Flaws — SQL Injection)
+    // MASTG: MASTG-ANDROID-CODE (Testing for SQL Injection)
     private void performLogin() {
         String userInput = etUsername.getText().toString();
 
-        // SQL injection vulnerability - direct string concatenation
+        // SQL injection — direct string concatenation of user input into raw query
         String query = "SELECT * FROM users WHERE username = '" + userInput + "'";
         tvQuery.setText("Query: " + query);
 

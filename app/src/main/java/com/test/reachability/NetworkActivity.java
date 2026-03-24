@@ -47,6 +47,10 @@ public class NetworkActivity extends AppCompatActivity {
         setContentView(layout);
     }
 
+    // VULNERABILITY: Cleartext HTTP Traffic
+    // OWASP Mobile Top 10 2024: M5 (Insecure Communication)
+    // MASVS: MASVS-NETWORK-1 (Cleartext Traffic Allowed)
+    // MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
     private void fetchHttp() {
         new Thread(() -> {
             try {
@@ -73,6 +77,10 @@ public class NetworkActivity extends AppCompatActivity {
         }).start();
     }
 
+    // VULNERABILITY: Disabled SSL/TLS Certificate Validation
+    // OWASP Mobile Top 10 2024: M5 (Insecure Communication)
+    // MASVS: MASVS-NETWORK-2 (TLS Certificate Verification Disabled)
+    // MASTG: MASTG-ANDROID-NET (Testing Custom Certificate Stores and Certificate Pinning)
     private void fetchHttpsNoPinning() {
         new Thread(() -> {
             try {
@@ -106,6 +114,11 @@ public class NetworkActivity extends AppCompatActivity {
     /**
      * Analytics endpoint - now permanently disabled via throw.
      * The HTTP call after the throw is dead code.
+     *
+     * VULNERABILITY (if reachable): Hidden Analytics Cleartext Endpoint
+     * OWASP Mobile Top 10 2024: M5 (Insecure Communication)
+     * MASVS: MASVS-NETWORK-1 (Cleartext Traffic to Hidden Endpoint)
+     * MASTG: MASTG-ANDROID-NET (Testing for Cleartext Traffic)
      */
     private void sendToAnalytics(String url) {
         throw new UnsupportedOperationException("Analytics disabled");
