@@ -48,6 +48,11 @@ public class MainActivity extends AppCompatActivity {
         btnSql.setOnClickListener(v -> startActivity(new Intent(this, SqlActivity.class)));
         layout.addView(btnSql);
 
+        Button btnDynamic = new Button(this);
+        btnDynamic.setText("Dynamic Loader Demo");
+        btnDynamic.setOnClickListener(v -> startActivity(new Intent(this, DynamicLoaderActivity.class)));
+        layout.addView(btnDynamic);
+
         setContentView(layout);
 
         logCredentials();

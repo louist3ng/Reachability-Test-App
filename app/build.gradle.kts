@@ -40,4 +40,8 @@ android {
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
+
+    // LOCAL DEPENDENCY: No Maven coordinates — invisible to SBOM tools that rely on pkg:maven PURLs.
+    // Will appear in META-INF and classes.dex but cannot be resolved to a PURL.
+    implementation(files("libs/local-lib.jar"))
 }
