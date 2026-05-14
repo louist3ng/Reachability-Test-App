@@ -55,6 +55,9 @@
         <!-- VULNERABILITY: Relative path traversal file access (CWE-23) -->
         <activity android:name=".MashAndroid0084Activity" android:exported="false" />
 
+        <!-- VULNERABILITY: Authorization header forwarded without host check (CWE-522) -->
+        <activity android:name=".MashAndroid0085Activity" android:exported="false" />
+
     </application>
 
 </manifest>

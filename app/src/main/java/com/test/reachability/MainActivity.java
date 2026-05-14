@@ -63,6 +63,11 @@ public class MainActivity extends AppCompatActivity {
         btnPathTraversal.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0084Activity.class)));
         layout.addView(btnPathTraversal);
 
+        Button btnAuthHeader = new Button(this);
+        btnAuthHeader.setText("Auth Header Demo (MASH-0085)");
+        btnAuthHeader.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0085Activity.class)));
+        layout.addView(btnAuthHeader);
+
         setContentView(layout);
 
         logCredentials();
