@@ -73,6 +73,11 @@ public class MainActivity extends AppCompatActivity {
         btnSecureFlag.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0086Activity.class)));
         layout.addView(btnSecureFlag);
 
+        Button btnTlsBypass = new Button(this);
+        btnTlsBypass.setText("TLS Bypass Demo (MASH-0087)");
+        btnTlsBypass.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0087Activity.class)));
+        layout.addView(btnTlsBypass);
+
         setContentView(layout);
 
         logCredentials();

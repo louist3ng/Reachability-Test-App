@@ -61,6 +61,9 @@
         <!-- VULNERABILITY: Missing Secure flag on cookies (CWE-614) -->
         <activity android:name=".MashAndroid0086Activity" android:exported="false" />
 
+        <!-- VULNERABILITY: TLS certificate validation bypassed (CWE-295) -->
+        <activity android:name=".MashAndroid0087Activity" android:exported="false" />
+
     </application>
 
 </manifest>
