@@ -52,6 +52,9 @@
         <!-- VULNERABILITY: Missing HttpOnly cookie flag (CWE-1004) -->
         <activity android:name=".MashAndroid0083Activity" android:exported="false" />
 
+        <!-- VULNERABILITY: Relative path traversal file access (CWE-23) -->
+        <activity android:name=".MashAndroid0084Activity" android:exported="false" />
+
     </application>
 
 </manifest>

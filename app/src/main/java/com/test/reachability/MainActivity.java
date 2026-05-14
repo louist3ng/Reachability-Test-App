@@ -58,6 +58,11 @@ public class MainActivity extends AppCompatActivity {
         btnCookie.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0083Activity.class)));
         layout.addView(btnCookie);
 
+        Button btnPathTraversal = new Button(this);
+        btnPathTraversal.setText("Path Traversal Demo (MASH-0084)");
+        btnPathTraversal.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0084Activity.class)));
+        layout.addView(btnPathTraversal);
+
         setContentView(layout);
 
         logCredentials();
