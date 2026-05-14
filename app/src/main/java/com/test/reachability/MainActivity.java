@@ -53,6 +53,11 @@ public class MainActivity extends AppCompatActivity {
         btnDynamic.setOnClickListener(v -> startActivity(new Intent(this, DynamicLoaderActivity.class)));
         layout.addView(btnDynamic);
 
+        Button btnCookie = new Button(this);
+        btnCookie.setText("Cookie Demo (MASH-0083)");
+        btnCookie.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0083Activity.class)));
+        layout.addView(btnCookie);
+
         setContentView(layout);
 
         logCredentials();

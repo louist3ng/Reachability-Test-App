@@ -49,6 +49,9 @@
         <!-- Dynamic DEX loader activity for SBOM testing -->
         <activity android:name=".DynamicLoaderActivity" android:exported="false" />
 
+        <!-- VULNERABILITY: Missing HttpOnly cookie flag (CWE-1004) -->
+        <activity android:name=".MashAndroid0083Activity" android:exported="false" />
+
     </application>
 
 </manifest>
