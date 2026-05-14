@@ -58,6 +58,9 @@
         <!-- VULNERABILITY: Authorization header forwarded without host check (CWE-522) -->
         <activity android:name=".MashAndroid0085Activity" android:exported="false" />
 
+        <!-- VULNERABILITY: Missing Secure flag on cookies (CWE-614) -->
+        <activity android:name=".MashAndroid0086Activity" android:exported="false" />
+
     </application>
 
 </manifest>

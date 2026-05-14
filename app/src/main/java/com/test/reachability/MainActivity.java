@@ -68,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
         btnAuthHeader.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0085Activity.class)));
         layout.addView(btnAuthHeader);
 
+        Button btnSecureFlag = new Button(this);
+        btnSecureFlag.setText("Secure Flag Demo (MASH-0086)");
+        btnSecureFlag.setOnClickListener(v -> startActivity(new Intent(this, MashAndroid0086Activity.class)));
+        layout.addView(btnSecureFlag);
+
         setContentView(layout);
 
         logCredentials();
